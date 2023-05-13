@@ -1,0 +1,9 @@
+Building DigitalKash
+
+See doc/readme-qt.rst for instructions on building DigitalKash QT,
+the intended-for-end-users, nice-graphical-interface, reference
+implementation of DigitalKash.
+
+See doc/build-*.txt for instructions on building DigitalKashd,
+the intended-for-services, no-graphical-interface, reference
+implementation of DigitalKash.
