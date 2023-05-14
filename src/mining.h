@@ -8,6 +8,7 @@
 #define BITCOIN_MINING_H
 
 #include "bignum.h"
+#include "fork.h"
 /** Minimum nCoinAge required to stake PoS */
 static const unsigned int nStakeMinAge = 2 * 60; // 2 Hours
 /** Time to elapse before new modifier is computed */
@@ -33,7 +34,7 @@ static const int64_t MNengine_COLLATERAL = (1 * COIN);
 /** MNengine pool values */
 static const int64_t MNengine_POOL_MAX = (999 * COIN);
 /** MasterNode required collateral */
-inline int64_t MasternodeCollateral(int nHeight) { return 50000; } // ON (75,000 DKASH)
+inline int64_t MasternodeCollateral(int nHeight) { if(IsEmissionsV2(GetTime())){return 1000000;} return 50000; } // ON (1,000,000 DKASH)
 /** PubkeyAliasService required fee */
 inline int64_t PubkeyaliasserviceFEE(int nHeight) { return 75; } // ON (75 DKASH)
 /** Coinbase transaction outputs can only be staked after this number of new blocks (network rule) */

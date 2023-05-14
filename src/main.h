@@ -14,7 +14,7 @@
 #include "scrypt.h"
 #include "crypto/bmw/bmw512.h"
 #include "crypto/echo/echo512.h"
-#include "fork.h"
+//#include "fork.h"
 #include "genesis.h"
 #include "mining.h"
 

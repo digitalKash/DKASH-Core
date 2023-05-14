@@ -75,8 +75,12 @@ uint64_t cntTime = 0;
 uint64_t prvTime = 0;
 uint64_t difTime = 0;
 uint64_t minuteRounds = 0;
+uint64_t minuteThresh = 0;
+uint64_t minuteIntrvl = 0;
 uint64_t difCurve = 0;
 uint64_t debugminuteRounds = 0;
+uint64_t debugminuteThresh = 0;
+uint64_t debugminuteIntrvl = 0;
 uint64_t debugDifCurve = 0;
 bool fDryRun;
 bool fCRVreset;
@@ -105,8 +109,9 @@ void VRXswngdebug(bool fProofOfStake)
     LogPrintf("Current block-time: %u: \n",cntTime);
     LogPrintf("Time since last %s block: %u: \n",difType.c_str(),difTime);
     // Handle updated versions as well as legacy
-    if(nBestHeight > 200) {
+    if(nBestHeight > 300) {
         debugminuteRounds = minuteRounds;
+        debugminuteThresh = minuteThresh;
         debugTerminalAverage = TerminalAverage;
         debugDifCurve = difCurve;
         LogPrintf("VRX_Threadcurve - Previous difficulty found: %d \n", VRX_GetPrevDiff(fProofOfStake));
@@ -119,12 +124,12 @@ void VRXswngdebug(bool fProofOfStake)
             debugTerminalAverage /= debugDifCurve;
             LogPrintf("diffTime%s is greater than %u Minutes: %u \n",difType.c_str(),debugminuteRounds,cntTime);
             LogPrintf("Difficulty will be multiplied by: %d \n",debugTerminalAverage);
-            // Break loop after 20 minutes, otherwise time threshold will auto-break loop
-            if (debugminuteRounds > (5 + 15)){
+            // Break loop after 9 minutes, otherwise time threshold will auto-break loop
+            if (debugminuteRounds > debugminuteThresh){
                 break;
             }
             debugDifCurve ++;
-            debugminuteRounds ++;
+            debugminuteRounds += debugminuteIntrvl;
         }
     } else {
         if(difTime > (minuteRounds+0) * 60 * 60) {LogPrintf("diffTime%s is greater than 1 Hours: %u \n",difType.c_str(),cntTime);}
@@ -182,7 +187,7 @@ void GNTdebug()
 //
 
 //
-// This is VRX (v3.6) revised implementation
+// This is VRX (v3.7) revised implementation
 //
 // Terminal-Velocity-RateX, v10-Beta-R9, written by Jonathan Dan Zaretsky - cryptocoderz@gmail.com
 void VRX_BaseEngine(const CBlockIndex* pindexLast, bool fProofOfStake)
@@ -327,6 +332,8 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
         prvTime = BlockVelocityType->pprev->GetBlockTime();
         difTime = cntTime - prvTime;
         minuteRounds = 45;
+        minuteThresh = 65;
+        minuteIntrvl = 5;
         difCurve = 2;
         fCRVreset = false;
 
@@ -340,6 +347,12 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
 
         // Version 1.2 Extended Curve Run Upgrade
         if(pindexLast->nHeight > 300) {
+            // Tighten up diff "wandering"
+            if(IsEmissionsV2(pindexLast->nTime)){
+                minuteRounds = 5;
+                minuteThresh = 9;
+                minuteIntrvl = 1;
+            }
             // Set unbiased comparison
             difTime = blkTime - cntTime;
             // Run Curve
@@ -349,8 +362,8 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
                     // Skip
                     break;
                 }
-                // Break loop after 65 minutes, otherwise time threshold will auto-break loop
-                if(minuteRounds > (5 + 60)){
+                // Break loop after 9 minutes, otherwise time threshold will auto-break loop
+                if(minuteRounds > minuteThresh){
                     fCRVreset = true;
                     break;
                 }
@@ -360,8 +373,8 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
                 VRX_Simulate_Retarget();
                 // Increase Curve per round
                 difCurve ++;
-                // Move up an hour per round
-                minuteRounds += 5;
+                // Move up 1-minute intervals per round
+                minuteRounds += minuteIntrvl;
             }
         } else {// Version 1.1 Standard Curve Run
             if(difTime > (minuteRounds+0) * 60 * 60) { TerminalAverage /= difCurve; }
@@ -472,10 +485,12 @@ int64_t GetProofOfWorkReward(int nHeight, int64_t nFees)
         if(pindexBest->nMoneySupply < (nBlockRewardReserve * 100)) {
             nSubsidy = nBlockRewardReserve;
         }
+    } if(IsEmissionsV2(pindexBest->nTime)) {
+        nSubsidy = nBlockV2Reward;
     }
 
     // hardCap v2.1
-    else if(pindexBest->nMoneySupply > MAX_SINGLE_TX)
+    if(pindexBest->nMoneySupply > MAX_SINGLE_TX)
     {
         LogPrint("MINEOUT", "GetProofOfWorkReward(): create=%s nFees=%d\n", FormatMoney(nFees), nFees);
         return nFees;
@@ -499,10 +514,12 @@ int64_t GetProofOfStakeReward(const CBlockIndex* pindexPrev, int64_t nCoinAge, i
         if(pindexBest->nMoneySupply < (nBlockRewardReserve * 100)) {
             nSubsidy = nBlockRewardReserve;
         }
+    } if(IsEmissionsV2(pindexBest->nTime)) {
+        nSubsidy = nBlockV2Reward;
     }
 
     // hardCap v2.1
-    else if(pindexBest->nMoneySupply > MAX_SINGLE_TX)
+    if(pindexBest->nMoneySupply > MAX_SINGLE_TX)
     {
         LogPrint("MINEOUT", "GetProofOfStakeReward(): create=%s nFees=%d\n", FormatMoney(nFees), nFees);
         return nFees;
@@ -521,6 +538,8 @@ int64_t GetMasternodePayment(int nHeight, int64_t blockValue)
     int64_t  ret2 = 0;
     if(nHeight > 100) {
         ret2 = (0.6 * COIN);
+    } if(IsEmissionsV2(pindexBest->nTime)) {
+        ret2 = (1.5 * COIN);
     }
     return ret2;
 }
@@ -533,6 +552,8 @@ int64_t GetDevOpsPayment(int nHeight, int64_t blockValue)
     int64_t ret2 = 0;
     if(nHeight > 100) {
         ret2 = (0.3 * COIN);
+    } if(IsEmissionsV2(pindexBest->nTime)) {
+        ret2 = (0.5 * COIN);
     }
     return ret2;
 }
