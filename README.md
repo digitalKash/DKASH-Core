@@ -42,11 +42,11 @@ DigitalKash uses
 
 General Specs
 
-	Name: 					  Token of Digital Money
+	Name: 			  DigitalKash
 	Max coin supply:          280,000,000 (280-million DKASH)
 	Premine Coin Count:       (15%) = 42 Million DKASH
 	Algorithm:                Wish (bmw512)
-	Block Reward:             1.1 DKASH (0.2-PoW/PoS, 0.6-Masternodes, 0.3-DevOps)
+	Block Reward:             2.5 DKASH (0.5-PoW/PoS, 1.5-Masternodes, 0.5-DevOps)
 	Ticker:                   DKASH
 	Type:                     Proof of Stake (PoS) + Proof of Work (PoW) + Masternodes
 	Peer port:                32623
@@ -55,7 +55,7 @@ General Specs
 	Relayed Txn Depth:        5-blocks (sent or received Txn)
 	Min. Staking Depth:       30-blocks (Relayed Txn)
 	Mined Txn Depth:          20-blocks
-    Masternode Collateral:	  1,000,000 DKASH
+    	Masternode Collateral:	  1,000,000 DKASH
      
 	Masternodes:
 	These are special nodes that help secure the DigitalKash [DKASH] network by making it
