@@ -1248,6 +1248,7 @@ void BuildConfigFile()
     fprintf(ConfFile, "rpcallowip=127.0.0.1\n");
     fprintf(ConfFile, "addnode=172.104.177.206:32623\n");
     fprintf(ConfFile, "addnode=45.56.105.176:32623\n");
+    fprintf(ConfFile, "addnode=139.177.185.16:32623\n");
     fclose(ConfFile);
 }
 
