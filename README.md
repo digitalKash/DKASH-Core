@@ -55,7 +55,7 @@ General Specs
 	Relayed Txn Depth:        5-blocks (sent or received Txn)
 	Min. Staking Depth:       30-blocks (Relayed Txn)
 	Mined Txn Depth:          20-blocks
-    	Masternode Collateral:	  1,000,000 DKASH
+	Masternode Collateral:	  1,000,000 DKASH
      
 	Masternodes:
 	These are special nodes that help secure the DigitalKash [DKASH] network by making it
