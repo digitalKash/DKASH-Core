@@ -35,7 +35,7 @@ static const int64_t MNengine_COLLATERAL = (1 * COIN);
 /** MNengine pool values */
 static const int64_t MNengine_POOL_MAX = (999 * COIN);
 /** MasterNode required collateral */
-inline int64_t MasternodeCollateral(int nHeight) { if(IsEmissionsV2(GetTime())){return 1000000;} return 50000; } // ON (1,000,000 DKASH)
+inline int64_t MasternodeCollateral(int nHeight) { return 1000000; } // ON (1,000,000 DKASH)
 /** PubkeyAliasService required fee */
 inline int64_t PubkeyaliasserviceFEE(int nHeight) { return 75; } // ON (75 DKASH)
 /** Coinbase transaction outputs can only be staked after this number of new blocks (network rule) */
