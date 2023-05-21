@@ -12,7 +12,7 @@ DigitalKash is a blockchain project aimed at helping save our world's rainforest
 ### Blockchain Technology
 The DigitalKash [DKASH] Blockchain is an experimental smart contract platform that enables 
 instant payments to anyone, anywhere in the world in a private, secure manner. 
-DigitalKash [DKASH] uses peer-to-peer blockchain technology developed by CryptoCoderz and SaltineChips to operate
+DigitalKash [DKASH] uses peer-to-peer blockchain technology to operate
 with no central authority: managing transactions, execution of contracts, and 
 issuing money are carried out collectively by the network.
 
