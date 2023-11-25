@@ -353,6 +353,10 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
                 minuteThresh = 9;
                 minuteIntrvl = 1;
             }
+            // Update threshold parameters
+            if(pindexBest->nHeight >= VELOCITY_THRESHOLD_2){
+                minuteThresh = 7;
+            }
             // Set unbiased comparison
             difTime = blkTime - cntTime;
             // Run Curve
@@ -362,7 +366,7 @@ void VRX_ThreadCurve(const CBlockIndex* pindexLast, bool fProofOfStake)
                     // Skip
                     break;
                 }
-                // Break loop after 9 minutes, otherwise time threshold will auto-break loop
+                // Break loop after 7 minutes, otherwise time threshold will auto-break loop
                 if(minuteRounds > minuteThresh){
                     fCRVreset = true;
                     break;

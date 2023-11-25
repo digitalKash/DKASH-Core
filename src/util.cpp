@@ -111,6 +111,7 @@ string strLiveForkToggle = "";
 int64_t nLiveForkToggle = 0;
 //Rollback to block
 string strRollbackToBlock = "";
+bool fRollbacktoBlock = false;
 //MasterNode recipient verification delay base time
 int64_t nMasterNodeChecksDelayBaseTime = GetTime();
 //MasterNode peer IP advanced relay system toggle

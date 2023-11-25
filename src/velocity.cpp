@@ -121,17 +121,17 @@ bool Velocity(CBlockIndex* prevBlock, CBlock* block, bool fFactor_tx)
     return true;
 }
 
-bool RollingCheckpoints(int nHeight)
+bool RollingCheckpoints(int nHeight, CBlockIndex* pindexRequest)
 {
     // Skip chain start
     if (nHeight < 500) {
         return false;
     }
     // Define values
-    CBlockIndex* pindexCurrentBlock = pindexBest;
+    CBlockIndex* pindexCurrentBlock = pindexRequest;
     CBlockIndex* pindexPastBlock = pindexCurrentBlock;
     // Set count and loop
-    int pastBLOCK_1 = (pindexCurrentBlock->nHeight - (BLOCK_TEMP_CHECKPOINT_DEPTH + BLOCK_REORG_THRESHOLD));
+    int pastBLOCK_1 = (nHeight - (BLOCK_TEMP_CHECKPOINT_DEPTH + BLOCK_REORG_THRESHOLD));
     while (pastBLOCK_1 < pindexCurrentBlock->nHeight) {
         // Index backwards
         pindexPastBlock = pindexPastBlock->pprev;

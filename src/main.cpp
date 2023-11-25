@@ -2100,21 +2100,59 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
 
     // Set values
     CBlockIndex* pfork = pindexBest;
-    CBlockIndex* plonger = pindexNew;
-    CBlockIndex* plongerindex = plonger;
-    int64_t pfinglonger = (plonger->nHeight - pfork->nHeight);
-    int64_t pheightlonger = plonger->nHeight;
-    int64_t preorgmax = (pfork->nHeight - BLOCK_REORG_MAX_DEPTH);
-    int diffFactor = 0;
+    CBlockIndex* pMerge = pindexNew;
+    CBlockIndex* pMergeIndex = pMerge;
+    int64_t nMergeDepth = 0;
+    int64_t pHeightMerge = pMerge->nHeight;
+    int64_t nHeightShorter = 0;
+    int64_t nReorgMax = 0;
+    int64_t diffFactor = 0;
+    bool fMergeReverse = false;
+    bool fRollBackCall = fRollbacktoBlock;
+
+    // Turn off BackToBlock toggle if on
+    fRollbacktoBlock = false;
+
+    // Find reorganize direction and set values
+    // (Espers [ESP] is not directionally bias)
+    if (pMerge->nHeight > pfork->nHeight) {
+        // Set directionally bias values
+        nMergeDepth = (pMerge->nHeight - pfork->nHeight);
+        nHeightShorter = pfork->nHeight;
+        nReorgMax = (pfork->nHeight - BLOCK_REORG_MAX_DEPTH);
+    } else {
+        // Set directionally bias values
+        nMergeDepth = (pfork->nHeight - pMerge->nHeight);
+        fMergeReverse = true;
+        nHeightShorter = pMerge->nHeight;
+        nReorgMax = (pMerge->nHeight - BLOCK_REORG_MAX_DEPTH);
+    }
+
+    // Ensure reorganize direction sanity
+    if (fMergeReverse) {
+        // Only allow reverse reorgs from Demi-nodes
+        // (Override for back-to-block command)
+        if((fDemiPeerRelay(GetRelayPeerAddr) && fDemiNodes) || fRollBackCall) {
+            LogPrintf("Reorganize() : Authorized a reverse-reorganize, now executing...\n");
+        } else {
+            return error("Reorganize() : Denied a reverse-reorganize - Not authorized!");
+        }
+    }
 
     // Ensure reorganize depth sanity
-    if (pfinglonger > BLOCK_REORG_MAX_DEPTH) {
-        // Only allow deep reorgs from Demi-nodes
+    if (nMergeDepth > BLOCK_REORG_MAX_DEPTH) {
+        // Only allow deep reorgs from Demi-nodes or during back-to-block
         // TODO: allow override as set in config file
-        if(fDemiPeerRelay(GetRelayPeerAddr) && fDemiNodes) {
-            preorgmax -= BLOCK_REORG_OVERRIDE_DEPTH;
-            if (pfinglonger > BLOCK_REORG_THRESHOLD) {
-                return error("Reorganize() : Threshold depth exceeded");
+        if((fDemiPeerRelay(GetRelayPeerAddr) && fDemiNodes) || fRollBackCall) {
+            nReorgMax -= BLOCK_REORG_OVERRIDE_DEPTH;
+            if (nMergeDepth > BLOCK_REORG_THRESHOLD) {
+                // Back-to-block bypasses normal threshold as it might not be set
+                if (fRollBackCall) {
+                    nReorgMax = (nNewHeight-1);
+                    LogPrintf("Reorganize() : Rolling back to block: %u \n", nNewHeight);
+                } else {
+                    return error("Reorganize() : Threshold depth exceeded");
+                }
             }
         } else {
             return error("Reorganize() : Maximum depth exceeded");
@@ -2122,21 +2160,23 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     }
 
     // Set rolling checkpoint status, just in case we haven't accepted any blocks yet
-    // TODO: Clean up to prevent redundant calls beween reorganize and AcceptBlock
-    fRollingCheckpoint = RollingCheckpoints(pfork->nHeight);
+    // and/or in case we're reverse reorganizing
+    // TODO: move this to reorganize direction check, then toggle this only if
+    // no previous blocks were accepted yet (no previous rolling checkpoint)
+    fRollingCheckpoint = RollingCheckpoints(nHeightShorter, pfork);
 
     // Get a checkpoint for quality assurance
     if (fRollingCheckpoint) {
         // Verify chain quality
-        while (pheightlonger > RollingHeight)
+        while (pHeightMerge > RollingHeight)
         {
-            if(plongerindex->GetBlockHash() == RollingBlock) {
+            if(pMergeIndex->GetBlockHash() == RollingBlock) {
                 break;
             }
-            plongerindex = plongerindex->pprev;
-            pheightlonger --;
+            pMergeIndex = pMergeIndex->pprev;
+            pHeightMerge --;
         }
-        if(plongerindex->GetBlockHash() != RollingBlock) {
+        if(pMergeIndex->GetBlockHash() != RollingBlock) {
             return error("Reorganize() : Chain quality failed, blockhash is invalid");
         }
     } else {
@@ -2145,20 +2185,20 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     }
 
     // Find the fork
-    while (pfork != plonger)
+    while (pfork != pMerge)
     {
         diffFactor ++;
-        while (plonger->nHeight > pfork->nHeight)
-            if (!(plonger = plonger->pprev))
+        while (pMerge->nHeight > pfork->nHeight)
+            if (!(pMerge = pMerge->pprev))
                 return error("Reorganize() : plonger->pprev is null");
-        if (pfork == plonger)
+        if (pfork == pMerge)
             break;
         if (!(pfork = pfork->pprev))
             return error("Reorganize() : pfork->pprev is null");
     }
 
     // Verify Supply Sanity of connecting branch
-    if(!bIndex_Factor(plonger, pindexNew, diffFactor))
+    if(!bIndex_Factor(pfork, pMerge, diffFactor))
     {
         // Invalid branch coin supply
         return error("Reorganize() : Invalid branch coin supply");
@@ -2179,25 +2219,32 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     LogPrintf("REORGANIZE: Disconnect %u blocks; %s..%s\n", vDisconnect.size(), pfork->GetBlockHash().ToString(), pindexBest->GetBlockHash().ToString());
     LogPrintf("REORGANIZE: Connect %u blocks; %s..%s\n", vConnect.size(), pfork->GetBlockHash().ToString(), pindexNew->GetBlockHash().ToString());
 
-    // Disconnect shorter branch
+    // Disconnect current branch
     list<CTransaction> vResurrect;
     BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
     {
         CBlock block;
         if (!block.ReadFromDisk(pindex))
+        {
             return error("Reorganize() : ReadFromDisk for disconnect failed");
+        }
         if (!block.DisconnectBlock(txdb, pindex))
-            return error("Reorganize() : DisconnectBlock failed for block: %s", pindex->GetBlockHash().ToString());
-
+        {
+            return error("Reorganize() : DisconnectBlock failed for block: %s ", pindex->GetBlockHash().ToString());
+        }
         // Queue memory transactions to resurrect.
         // We only do this for blocks after the last checkpoint (reorganisation before that
         // point should only happen with -reindex/-loadblock, or a misbehaving peer.
         BOOST_REVERSE_FOREACH(const CTransaction& tx, block.vtx)
-            if (!(tx.IsCoinBase() || tx.IsCoinStake()) && pindex->nHeight > preorgmax)
+        {
+            if (!(tx.IsCoinBase() || tx.IsCoinStake()) && pindex->nHeight > nReorgMax)
+            {
                 vResurrect.push_front(tx);
+            }
+        }
     }
 
-    // Connect longer branch
+    // Connect merging branch
     vector<CTransaction> vDelete;
     for (unsigned int i = 0; i < vConnect.size(); i++)
     {
@@ -2224,6 +2271,8 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
             vDelete.push_back(tx);
     }
+
+    // Write new best chain hash
     if (!txdb.WriteHashBestChain(pindexNew->GetBlockHash()))
         return error("Reorganize() : WriteHashBestChain failed");
 
@@ -2231,12 +2280,12 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     if (!txdb.TxnCommit())
         return error("Reorganize() : TxnCommit failed");
 
-    // Disconnect shorter branch
+    // Disconnect current branch
     BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
         if (pindex->pprev)
             pindex->pprev->pnext = NULL;
 
-    // Connect longer branch
+    // Connect merging branch
     BOOST_FOREACH(CBlockIndex* pindex, vConnect)
         if (pindex->pprev)
             pindex->pprev->pnext = pindex;
@@ -2997,7 +3046,7 @@ bool CBlock::AcceptBlock()
 
     // Set rolling checkpoint status
     // TODO: Clean up to prevent redundant calls beween reorganize and AcceptBlock
-    fRollingCheckpoint = RollingCheckpoints(nHeight);
+    fRollingCheckpoint = RollingCheckpoints(nHeight, pindexPrev);
 
     return true;
 }
@@ -4737,6 +4786,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             return true;
 
         // Start block sync
+        //
+        // Demi-nodes v0.6 alpha
+        //
         if (pto->fStartSync && !fImporting && !fReindex) {
             // Espers Demi-node rewrite...
             // Don't send blind get blocks message anymore.
@@ -4746,10 +4798,8 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             // There are overrides and exceptions, please consult
             // the Demi-node documentation for more information.
             //
-
-            pto->fStartSync = false;
-
             if(!fDemiNodes) {
+                pto->fStartSync = false;
                 PushGetBlocks(pto, pindexBest, uint256(0));
             } else {
                 if(pto->nVersion < DEMINODE_VERSION) {
@@ -4762,8 +4812,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     // Ensure handling of demi and standard failover
                     //
                     // Sync only if peer is a registered Demi-node
-                    // This is a limitation only of v0.5
+                    // This is a limitation only of v0.5-v0.6
                     if(fDemiPeerRelay(pto->addrName)) {
+                        pto->fStartSync = false;
                         PushGetBlocks(pto, pindexBest, uint256(0));
                     }
                 }

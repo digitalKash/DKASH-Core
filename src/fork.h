@@ -15,6 +15,8 @@ static const int64_t nReservePhaseStart = 1;
 static const int64_t VELOCITY_TOGGLE = 175; // Implementation of the Velocity system into the chain.
 /** Velocity retarget toggle block */
 static const int64_t VELOCITY_TDIFF = 0; // Use Velocity's retargetting method.
+/** VRX Threshold update block */
+static const int64_t VELOCITY_THRESHOLD_2 = 162858; // Update VRX v3.6 retarget threshold.
 /** Protocol 3.0 toggle */
 inline bool IsProtocolV3(int64_t nTime) { return TestNet() || nTime > 1493596800; } // Mon, 01 May 2017 00:00:00 GMT
 /** Emissions output 2.0 toggle */

@@ -541,7 +541,7 @@ void DigitalKashGUI::createToolBars()
 
 void DigitalKashGUI::setClientModel(ClientModel *clientModel)
 {
-    netLabel->setText("v1.2.0.0");// Version in GUI
+    netLabel->setText("v1.3.0.0");// Version in GUI
 
     this->clientModel = clientModel;
     if(clientModel)

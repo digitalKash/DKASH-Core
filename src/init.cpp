@@ -864,9 +864,10 @@ bool AppInit2(boost::thread_group& threadGroup)
         strRollbackToBlock = GetArg("-backtoblock", "");
         LogPrintf("Rolling blocks back...\n");
         if(!strRollbackToBlock.empty()){
-            nNewHeight = GetArg("-backtoblock", (int)"");
-
+            nNewHeight = GetArg("-backtoblock", (uint64_t)"");
+            fRollbacktoBlock = true;
             CBlockIndex* pindex = pindexBest;
+            int pindexGap = (pindex->nHeight - nNewHeight);
             while (pindex != NULL && pindex->nHeight > nNewHeight)
             {
                 ostringstream osHeight;
@@ -875,18 +876,24 @@ bool AppInit2(boost::thread_group& threadGroup)
                 uiInterface.InitMessage(strprintf("Rolling blocks back... %s to %i \n", strHeight, nNewHeight));
                 pindex = pindex->pprev;
             }
-
             if (pindex != NULL)
             {
                 LogPrintf("Back to block index %d\n", nNewHeight);
+                uiInterface.InitMessage(strprintf("Reorganizing %u blocks, please wait... \n", pindexGap));
                 CTxDB txdbAddr("rw");
                 CBlock block;
                 block.ReadFromDisk(pindex);
                 block.SetBestChain(txdbAddr, pindex);
             }
+            else
+            {
+                LogPrintf("Block %d not found\n", nNewHeight);
+            }
         }
         else
-            LogPrintf("Block %d not found\n", nNewHeight);
+        {
+            LogPrintf("Back to block was requested but not defined!\n");
+        }
     }
 
     // ********************************************************* Step 8: load wallet
