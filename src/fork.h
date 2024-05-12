@@ -1,6 +1,6 @@
-// Copyright (c) 2016-2023 The CryptoCoderz Team / Espers
-// Copyright (c) 2018-2023 The Rubix project
-// Copyright (c) 2022-2023 The FrogCoin project
+// Copyright (c) 2016-2024 The CryptoCoderz Team / Espers
+// Copyright (c) 2018-2024 The Rubix project
+// Copyright (c) 2022-2024 The FrogCoin project
 // Copyright (c) 2023      The DigitalKash project
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -15,8 +15,8 @@ static const int64_t nReservePhaseStart = 1;
 static const int64_t VELOCITY_TOGGLE = 175; // Implementation of the Velocity system into the chain.
 /** Velocity retarget toggle block */
 static const int64_t VELOCITY_TDIFF = 0; // Use Velocity's retargetting method.
-/** VRX Threshold update block */
-static const int64_t VELOCITY_THRESHOLD_2 = 162858; // Update VRX v3.6 retarget threshold.
+/** Velocity retarget toggle block */
+static const int64_t VELOCITY_THRESHOLD_2 = 162858; // Update Velocity retarget threshold.
 /** Protocol 3.0 toggle */
 inline bool IsProtocolV3(int64_t nTime) { return TestNet() || nTime > 1493596800; } // Mon, 01 May 2017 00:00:00 GMT
 /** Emissions output 2.0 toggle */

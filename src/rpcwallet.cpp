@@ -2606,12 +2606,12 @@ Value cclistcoins(const Array& params, bool fHelp)
             "cclistcoins\n"
                         "CoinControl: list your spendable coins and their information\n");
 
-        Array result;
+    Array result;
 
-        std::vector<COutput> vCoins;
+    std::vector<COutput> vCoins;
     pwalletMain->AvailableCoins(vCoins);
 
-        BOOST_FOREACH(const COutput& out, vCoins)
+    BOOST_FOREACH(const COutput& out, vCoins)
     {
                 Object coutput;
                 int64_t nHeight = nBestHeight - out.nDepth;
