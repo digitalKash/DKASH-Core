@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2023 The Espers Project/CryptoCoderz Team
+// Copyright (c) 2021-2024 The Espers Project/CryptoCoderz Team
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -26,7 +26,7 @@ bool fDemiPeerRelay(std::string peerAddr)
         return true;
     }
     // Failure if not found
-    LogPrintf("Demi-node System: fDemiPeerRelay - Peer: %s does NOT match any listed Demi-node!\n", peerAddr);
+    // LogPrintf("Demi-node System: fDemiPeerRelay - Peer: %s does NOT match any listed Demi-node!\n", peerAddr);
     return false;
 }
 

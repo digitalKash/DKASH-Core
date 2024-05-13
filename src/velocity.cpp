@@ -1,16 +1,12 @@
 // Copyright (c) 2014 The Cryptocoin DigitalKashival Foundation
-// Copyright (c) 2015-2023 The CryptoCoderz Team / Espers
-// Copyright (c) 2018-2023 The Rubix Project
-// Copyright (c) 2022-2023 The DigitalKash project
+// Copyright (c) 2015-2024 The CryptoCoderz Team / Espers
+// Copyright (c) 2018-2024 The Rubix Project
+// Copyright (c) 2022-2024 The DigitalKash project
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "blockparams.h"
-#include "main.h"
 #include "txdb.h"
 #include "velocity.h"
-#include "rpcserver.h"
-#include "wallet.h"
 
 bool VELOCITY_FACTOR = false;
 uint256 RollingBlock;
