@@ -79,6 +79,8 @@ static int BLOCK_REORG_OVERRIDE_DEPTH = 0;
 static int BLOCK_REORG_THRESHOLD = BLOCK_REORG_MAX_DEPTH + BLOCK_REORG_OVERRIDE_DEPTH;
 /** Depth for rolling checkpoing block */
 static const int BLOCK_TEMP_CHECKPOINT_DEPTH = 120;
+/** Allow/Deny reorganize requests from peers as well as Demi-nodes */
+static int PEER_REORG_TYPE = 0;
 /** Velocity Factor handling toggle */
 inline bool FACTOR_TOGGLE(int nHeight) { return TestNet() || nHeight > 500; }
 /** Defaults to yes, adaptively increase/decrease max/min/priority along with the re-calculated block size **/
@@ -146,6 +148,8 @@ void RegisterNodeSignals(CNodeSignals& nodeSignals);
 void UnregisterNodeSignals(CNodeSignals& nodeSignals);
 
 void PushGetBlocks(CNode* pnode, CBlockIndex* pindexBegin, uint256 hashEnd);
+
+bool NewBlockRelay(CBlock* pblock);
 bool ProcessBlock(CNode* pfrom, CBlock* pblock);
 bool CheckDiskSpace(uint64_t nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");

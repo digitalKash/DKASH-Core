@@ -1233,6 +1233,7 @@ void BuildConfigFile()
     fprintf(ConfFile, "maxconnections=150\n");
     fprintf(ConfFile, "deminodes=1\n");
     fprintf(ConfFile, "demimaxdepth=200\n");
+    fprintf(ConfFile, "demireorgtype=1\n");
     fprintf(ConfFile, "rpcuser=yourusername\n");
 
     char s[32];
