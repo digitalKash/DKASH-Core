@@ -111,11 +111,12 @@ rpcport=32624
 port=32623
 rpcconnect=127.0.0.1
 rpcallowip=127.0.0.1
-addnode=104.219.232.174
-addnode=136.158.100.34
-addnode=164.68.102.152
-addnode=167.86.115.141
-addnode=203.161.63.6
+addnode=103.3.62.31
+addnode=103.3.62.31:32623
+addnode=192.53.122.152
+addnode=192.53.122.152:32623
+addnode=46.37.115.254
+addnode=46.37.115.254:32623
 CONFIG
 chmod 700 ~/.DKASH/DigitalKash.conf; chmod 700 ~/.DKASH; ls -la ~/.DKASH
 ```
