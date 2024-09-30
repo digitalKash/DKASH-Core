@@ -77,6 +77,7 @@ public:
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 int64_t nLastCoinStakeSearchInterval = 0;
+int nSubmitHeight = 0;
  
 // We want to sort transactions by priority and fee, so:
 typedef boost::tuple<double, double, CTransaction*> TxPriority;
@@ -602,6 +603,9 @@ bool CheckStake(CBlock* pblock, CWallet& wallet)
     uint256 proofHash = 0, hashTarget = 0;
     uint256 hashBlock = pblock->GetHash();
 
+    // Set submitted block height
+    nSubmitHeight = pindexBest->nHeight;
+
     if(!pblock->IsProofOfStake())
         return error("CheckStake() : %s is not a proof-of-stake block", hashBlock.GetHex());
 
@@ -629,14 +633,15 @@ bool CheckStake(CBlock* pblock, CWallet& wallet)
         // Depricated:
         // ------------
         // Process this block the same as if we had received it from another node
-        // if (!ProcessBlock(NULL, pblock))
-        //     return error("CheckStake() : ProcessBlock, block not accepted");
+         if (!ProcessBlock(NULL, pblock)) {
+             return error("CheckStake() : ProcessBlock, block not accepted");
+         }
         // ----------------
         //
         // Relay created block, but don't accept it... Let network consensus decide
-        if (!NewBlockRelay(pblock)) {
-            return error("CheckStake() : NewBlockRelay, block failed being relayed to peers!");
-        }
+        //if (!NewBlockRelay(pblock)) {
+        //    return error("CheckStake() : NewBlockRelay, block failed being relayed to peers!");
+        //}
         else
         {
             //ProcessBlock successful for PoS. now FixSpentCoins.
@@ -666,13 +671,16 @@ void ThreadStakeMiner(CWallet *pwallet)
 
     while (true)
     {
+        // Set/Define values
+        int64_t elapsedTime = GetTime() - pindexBest->GetBlockTime();
+
         while (pwallet->IsLocked())
         {
             nLastCoinStakeSearchInterval = 0;
             MilliSleep(1000);
         }
 
-        while (vNodes.empty() || IsInitialBlockDownload())
+        while (vNodes.empty())// || IsInitialBlockDownload()
         {
             nLastCoinStakeSearchInterval = 0;
             fTryToSync = true;
@@ -682,11 +690,18 @@ void ThreadStakeMiner(CWallet *pwallet)
         if (fTryToSync)
         {
             fTryToSync = false;
-            if (vNodes.size() < 3 || pindexBest->GetBlockTime() < GetTime() - 10 * 60)
+            if (vNodes.size() < 2)// || pindexBest->GetBlockTime() < GetTime() - 10 * 60
             {
                 MilliSleep(10000);
                 continue;
             }
+        }
+
+        // Do not needlessly mine a block if out of parameters
+        while (elapsedTime < (BLOCK_SPACING_MIN + 5))
+        {
+            elapsedTime = GetTime() - pindexBest->GetBlockTime();
+            MilliSleep(5000);
         }
 
         //

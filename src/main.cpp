@@ -2574,25 +2574,35 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const u
 bool NewBlockRelay(CBlock* pblock)
 {
     // Verify we meet basic parameters
-    if (!Velocity(pindexBest, pblock, false)) {
+    int64_t elapseTime = pblock->GetBlockTime() - mapBlockIndex[pblock->hashPrevBlock]->GetBlockTime();
+    if (elapseTime < BLOCK_SPACING_MIN) {
         return error("NewBlockRelay() : newly generated block failed to meet parameters \n");
     }
+
     // Setup values
-    uint256 hash = pblock->GetHash();
+    uint256 hashBlock = pblock->GetHash();
+    int nRelayHeight = nBestHeight+1;
     bool relayFail = true;
+
     // Relay New Block
     int nBlockEstimate = Checkpoints::GetTotalBlocksEstimate();
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-        if (nBestHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate)) {
-            pnode->PushInventory(CInv(MSG_BLOCK, hash));
-            relayFail = false;
+    for(CNode* pnode : vNodes) {
+        if (nRelayHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 5 : nBlockEstimate)) {
+            // Only relay to DemiNodes, this further prevents chain splitting
+            if (fDemiPeerRelay(pnode->addrName) && fDemiNodes) {
+                pnode->PushMessage("block", *pblock);
+                LogPrintf("NewBlockRelay() : Relayed Block: %s, To Node: %s \n", hashBlock.ToString(), pnode->addrName );
+                relayFail = false;
+            }
         }
     }
+
     // Return success if relayed to a peer/node
     if (relayFail == false) {
         return true;
     }
+
     // Fail if we can't relay
     return error("NewBlockRelay() : newly generated block relay failed (Are we synced?) \n");
 
